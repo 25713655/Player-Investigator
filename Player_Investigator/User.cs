@@ -22,8 +22,8 @@ namespace Player_Investigator
         public int onlineState { get; set; }
         //1 indicates the user has set up their profile
         public int profileState { get; set; }
-        //Time the account was created
-        public ulong timeCreated { get; set; }
+        //Date and time the account was created
+        public DateTime timeCreated { get; set; }
         //Primary group ID
         public string primaryGroupID { get; set; }
         //Country
@@ -112,11 +112,13 @@ namespace Player_Investigator
 
             if (gPSI.timecreated is null)
             {
-                timeCreated = 0;
+                timeCreated = new();
             }
             else
             {
-                timeCreated = (ulong)gPSI.timecreated;
+                timeCreated = new(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+                timeCreated = timeCreated.AddSeconds((double)gPSI.timecreated);
+                //timeCreated = new((ulong)gPSI.timecreated);
             }
 
             if (gPSI.primaryclanid is null)

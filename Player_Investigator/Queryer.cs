@@ -83,7 +83,7 @@ namespace Player_Investigator
             this.steamID = "76561197960435530"; //Remove
             this.steamID = "76561197960434622";
 
-            //this.steamID = "76561198271851487";
+            this.steamID = "76561198271851487";
             //this.steamID = "76561198271791346";
 
             output = "";
@@ -96,25 +96,13 @@ namespace Player_Investigator
 
         //Other functions
 
-        public async Task GetAsync()
-        {
-            using HttpResponseMessage response = await httpClient.GetAsync("todos/3");
-
-            response.EnsureSuccessStatusCode();
-            WriteRequestToOutput(response);
-
-            var jsonResponse = await response.Content.ReadAsStringAsync();
-            output += jsonResponse;
-            //richTextBox1.Text = ($"{jsonResponse}\n");
-        }
-
         public async Task<UserInfo> GetAll()
         {
+            output = "";
+
             //GetPlayerSummary
             requestString = $"ISteamUser/GetPlayerSummaries/v0002/?key={key}&steamids={steamID}";
-            getPlayerSummaryResponse = await GetInfo(requestString, 24, 3); //Indexes needed?
-
-            //if (profile private) break
+            getPlayerSummaryResponse = await GetInfo(requestString, 24, 3);
 
             //GetOwnedGames
             requestString = $"IPlayerService/GetOwnedGames/v0001/?key={key}&steamid={steamID}&include_played_free_games=1";
@@ -122,15 +110,16 @@ namespace Player_Investigator
 
             //Create objects with info retrieved
             getPlayerSummaryInfo = JsonSerializer.Deserialize<GetPlayerSummaryInfo>(getPlayerSummaryResponse);
-            if (getPlayerSummaryInfo.communityvisibilitystate == 1)
-            {
-                output = "Profile is private. Cannot retrieve information.";
-                return null;
-            }
             getOwnedGamesInfo = JsonSerializer.Deserialize<GetOwnedGamesInfo>(getOwnedGamesResponse);
 
             //Create a UserInfo object with all the info retrieved
             UserInfo userInfo = new(getPlayerSummaryInfo, getOwnedGamesInfo);
+
+            if (getPlayerSummaryInfo.communityvisibilitystate == 1)
+            {
+                output += "Profile is private. Cannot retrieve information.\n";
+            }
+            output += userInfo.ToString();
 
             return userInfo;
 
@@ -157,8 +146,6 @@ namespace Player_Investigator
             //Use replace instead?
             //Replace(start, "")
             //jsonResponse = jsonResponse.Replace("]}}", "");
-
-            output += responseString;
 
             return responseString;
         }
