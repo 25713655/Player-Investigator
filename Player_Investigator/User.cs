@@ -32,8 +32,25 @@ namespace Player_Investigator
         public string stateCode { get; set; }
         //City ID
         public int cityID { get; set; }
-
         public int personaStateFlags { get; set; }
+
+        //How many games are in the user's library
+        public int gameCount { get; set; }
+        //CS:GO Info
+        public bool CSGOPlayed { get; set; }
+        public int CSGOPlaytime2Weeks { get; set; }
+        public int CSGOPlaytimeForever { get; set; }
+        public ulong CSGOLastPlayed { get; set; }
+        //Dota 2 Info
+        public bool Dota2Played { get; set; }
+        public int Dota2Playtime2Weeks { get; set; }
+        public int Dota2PlaytimeForever { get; set; }
+        public ulong Dota2LastPlayed { get; set; }
+        //Apex Info
+        public bool ApexPlayed { get; set; }
+        public int ApexPlaytime2Weeks { get; set; }
+        public int ApexPlaytimeForever { get; set; }
+        public ulong ApexLastPlayed { get; set; }
 
 
         public UserInfo(GetPlayerSummaryInfo gPSI, GetOwnedGamesInfo gOGI) //And others
@@ -148,7 +165,74 @@ namespace Player_Investigator
             }
 
             //GetOwnedGamesInfo
-
+            if (gOGI.game_count is null)
+            {
+                gameCount = -1;
+            }
+            else
+            {
+                gameCount = (int)gOGI.game_count;
+            }
+            CSGOPlayed = false;
+            CSGOPlaytime2Weeks = -1;
+            CSGOPlaytimeForever = -1;
+            CSGOLastPlayed = 0;
+            Dota2Played = false;
+            Dota2Playtime2Weeks = -1;
+            Dota2PlaytimeForever = -1;
+            Dota2LastPlayed = 0;
+            ApexPlayed = false;
+            ApexPlaytime2Weeks = -1;
+            ApexPlaytimeForever = -1;
+            ApexLastPlayed = 0;
+            if (gOGI.games is not null)
+            {
+                foreach (var game in gOGI.games)
+                {
+                    if (game.appid == 730)
+                    {
+                        CSGOPlayed = true;
+                        if (game.playtime_2weeks is null)
+                        {
+                            CSGOPlaytime2Weeks = 0;
+                        }
+                        else
+                        {
+                            CSGOPlaytime2Weeks = (int)game.playtime_2weeks;
+                        }
+                        CSGOPlaytimeForever = (int)game.playtime_forever;
+                        CSGOLastPlayed = (ulong)game.rtime_last_played;
+                    }
+                    else if (game.appid == 570)
+                    {
+                        Dota2Played = true;
+                        if (game.playtime_2weeks is null)
+                        {
+                            Dota2Playtime2Weeks = 0;
+                        }
+                        else
+                        {
+                            Dota2Playtime2Weeks = (int)game.playtime_2weeks;
+                        }
+                        Dota2PlaytimeForever = (int)game.playtime_forever;
+                        Dota2LastPlayed = (ulong)game.rtime_last_played;
+                    }
+                    else if (game.appid == 1172470)
+                    {
+                        ApexPlayed = true;
+                        if (game.playtime_2weeks is null)
+                        {
+                            ApexPlaytime2Weeks = 0;
+                        }
+                        else
+                        {
+                            ApexPlaytime2Weeks = (int)game.playtime_2weeks;
+                        }
+                        ApexPlaytimeForever = (int)game.playtime_forever;
+                        ApexLastPlayed = (ulong)game.rtime_last_played;
+                    }
+                }
+            }
         }
 
         public override string ToString()

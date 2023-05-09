@@ -28,7 +28,7 @@ namespace Player_Investigator
 
         private async void button1_Click(object sender, EventArgs e)
         {
-            await queryer.GetAll();
+            UserInfo? userInfo = await queryer.GetAll();
 
             richTextBox1.Text = queryer.output;
         }

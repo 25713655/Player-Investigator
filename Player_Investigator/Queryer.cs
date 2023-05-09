@@ -30,6 +30,21 @@ namespace Player_Investigator
     {
         //Figure out which games to do
         //Apex, CSGO, Dota2
+        //CS:GO - 730
+        //Dota 2 - 570
+        //Apex - 1172470
+
+        public int? game_count { get; set; }
+        public List<GamesInfo>? games { get; set; }
+    }
+
+    internal class GamesInfo
+    {
+        public int? appid { get; set; }
+        public int? playtime_2weeks { get; set; }
+        public int? playtime_forever { get; set; }
+        public ulong? rtime_last_played { get; set; }
+
     }
 
     internal class Queryer
@@ -53,8 +68,8 @@ namespace Player_Investigator
 
         //Change to static?
         private HttpClient httpClient;
-        public string key, steamID;
-        public string? output, requestString, getPlayerSummaryResponse, getOwnedGamesResponse;
+        public string key, steamID, output;
+        public string? requestString, getPlayerSummaryResponse, getOwnedGamesResponse;
         public GetPlayerSummaryInfo? getPlayerSummaryInfo;
         public GetOwnedGamesInfo? getOwnedGamesInfo;
 
@@ -71,6 +86,7 @@ namespace Player_Investigator
             //this.steamID = "76561198271851487";
             //this.steamID = "76561198271791346";
 
+            output = "";
             httpClient = new()
             {
                 BaseAddress = new Uri("https://api.steampowered.com"),
@@ -92,10 +108,8 @@ namespace Player_Investigator
             //richTextBox1.Text = ($"{jsonResponse}\n");
         }
 
-        public async Task GetAll()
+        public async Task<UserInfo> GetAll()
         {
-            output = "";
-
             //GetPlayerSummary
             requestString = $"ISteamUser/GetPlayerSummaries/v0002/?key={key}&steamids={steamID}";
             getPlayerSummaryResponse = await GetInfo(requestString, 24, 3); //Indexes needed?
@@ -104,15 +118,21 @@ namespace Player_Investigator
 
             //GetOwnedGames
             requestString = $"IPlayerService/GetOwnedGames/v0001/?key={key}&steamid={steamID}&include_played_free_games=1";
-            getOwnedGamesResponse = await GetInfo(requestString, 0, 0);
+            getOwnedGamesResponse = await GetInfo(requestString, 12, 1);
 
             //Create objects with info retrieved
             getPlayerSummaryInfo = JsonSerializer.Deserialize<GetPlayerSummaryInfo>(getPlayerSummaryResponse);
+            if (getPlayerSummaryInfo.communityvisibilitystate == 1)
+            {
+                output = "Profile is private. Cannot retrieve information.";
+                return null;
+            }
             getOwnedGamesInfo = JsonSerializer.Deserialize<GetOwnedGamesInfo>(getOwnedGamesResponse);
 
             //Create a UserInfo object with all the info retrieved
             UserInfo userInfo = new(getPlayerSummaryInfo, getOwnedGamesInfo);
 
+            return userInfo;
 
             //output += userInfo.ToString();
             //var properties = getPlayerSummaryInfo.GetType().GetProperties();
