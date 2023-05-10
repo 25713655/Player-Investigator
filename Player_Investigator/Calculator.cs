@@ -8,99 +8,121 @@ namespace Player_Investigator
 {
     internal class Calculator
     {
-        //Calculator code goes here
-        //https://developer.valvesoftware.com/wiki/Steam_Web_API
-        //Check that for all data you could use to consider whether user is a smurf
-        //The methods that I will query will probably be:
-        //GetPlayerSummaries
-        //GetOwnedGames/GetRecentlyPlayedGames
-        //GetFriendList
-        //GetPlayerAchievements/GetUserStatsForGame
-        //So check the return values for those methods
+        public UserInfo userInfo;
+        public string output;
 
-        //Ideas
-        //Check if avatar is default ?
-        //Check for 2 in name
-        //Check age of account
-        //etc
-
-        public Calculator()
+        public Calculator(UserInfo uI)
         {
-
+            userInfo = uI;
+            output = "";
         }
 
-        public void GenerateBaseScore()
+        private const int MaxScore = 100;
+
+        private const int TimePlayedWeight = 15;
+        private const int NumFriendsWeight = 20;
+        private const int SteamLevelWeight = 10;
+        private const int AccountAgeWeight = 35;
+        private const int AchievementCountWeight = 10;
+        private const int PaidGameCountWeight = 30;
+
+        private const int MaxTimePlayed = 100;
+        private const int MinNumFriends = 10;
+        private const int MinSteamLevel = 10;
+        private const int MaxAccountAgeInDays = 365;
+        private const int MinAchievementCount = 10;
+        private const int MinPaidGameCount = 5;
+
+        public double CheckSmurfAccount(string game)
         {
-            if (totalGames != "Unknown" && paidGames != "Unknown" && highestPlayTime != "Unknown")
+            int timePlayed = 0, numFriends = 0, steamLevel = userInfo.level, achievementCount = 0, paidGameCount = userInfo.paidGameCount;
+            DateTime accountCreationDate = userInfo.timeCreated;
+
+            switch (game)
             {
-                gameScore = 0;
-                if (paidGames >= 10)
-                    gameScore += 5;
-                if (paidGames >= 30)
-                    gameScore += 5;
-                if (totalGames >= 75)
-                    gameScore += 5;
-                if (highestPlayTime >= 300)
-                    gameScore += 5;
+                case "CS:GO":
+                    if (userInfo.CSGOPlayed == false)
+                    {
+                        output += "User has never played CS:GO.\n";
+                        //return -1;
+                        timePlayed = 0;
+                        achievementCount = 0;
+                    }
+                    else
+                    {
+                        timePlayed = userInfo.CSGOPlaytimeForever / 60;
+                        achievementCount = userInfo.CSGOAchievementCount;
+                    }
+                    break;
+
+                case "Dota 2":
+                    if (userInfo.Dota2Played == false)
+                    {
+                        output += "User has never played Dota 2.\n";
+                        //return -1;
+                    }
+                    else
+                    {
+                        timePlayed = userInfo.Dota2PlaytimeForever / 60;
+                        achievementCount = userInfo.Dota2AchievementCount;
+                    }
+                    break;
+
+                case "Apex Legends":
+                    if (userInfo.ApexPlayed == false)
+                    {
+                        output += "User has never played Apex Legends.\n";
+                        //return -1;
+                    }
+                    else
+                    {
+                        timePlayed = userInfo.ApexPlaytimeForever / 60;
+                        achievementCount = userInfo.ApexAchievementCount;
+                    }
+                    break;
             }
 
-            if (numberOfFriends != "Unknown")
+            int timePlayedScore = CalculateScore(timePlayed, MaxTimePlayed) * TimePlayedWeight;
+            //int numFriendsScore = CalculateScore(numFriends, MinNumFriends) * NumFriendsWeight;
+            int steamLevelScore = CalculateScore(steamLevel, MinSteamLevel) * SteamLevelWeight;
+            int accountAgeScore = CalculateAccountAgeScore(accountCreationDate) * AccountAgeWeight;
+            int achievementCountScore = CalculateScore(achievementCount, MinAchievementCount) * AchievementCountWeight;
+            int paidGameCountScore = CalculateScore(paidGameCount, MinPaidGameCount) * PaidGameCountWeight;
+
+            int numFriendsScore = 0;
+            int overallScore = timePlayedScore + numFriendsScore + steamLevelScore + accountAgeScore + achievementCountScore + paidGameCountScore;
+
+            int maxScore = MaxScore * (TimePlayedWeight + SteamLevelWeight + AccountAgeWeight + AchievementCountWeight + PaidGameCountWeight);
+            double percentage = (double)overallScore / maxScore * 100;
+
+            output += $"Calculated percentage: {percentage}";
+
+            return percentage;
+        }
+
+        private int CalculateScore(int value, int threshold)
+        {
+            if (value <= threshold)
             {
-                friendScore = 0;
-                if (numberOfFriends >= 50)
-                    friendScore += 10;
-                if (numberOfFriends >= 100)
-                    friendScore += 10;
+                return MaxScore;
             }
 
-            //if (steamLevel != "Unknown")
-            //{
-            //    levelScore = 0;
-            //    if (steamLevel >= 5)
-            //        levelScore += 2.5;
-            //    if (steamLevel >= 10)
-            //        levelScore += 5;
-            //    if (steamLevel >= 15)
-            //        levelScore += 2.5;
-            //}
+            double ratio = (double)threshold / value;
+            return (int)(MaxScore * ratio);
+        }
 
-            //if (steamBadges != "Unknown")
-            //{
-            //    badgeScore = 0;
-            //    if (steamBadges >= 5)
-            //        badgeScore += 2.5;
-            //    if (steamBadges >= 10)
-            //        badgeScore += 5;
-            //    if (steamBadges >= 15)
-            //        badgeScore += 2.5;
-            //}
+        private int CalculateAccountAgeScore(DateTime accCreationDate)
+        {
+            TimeSpan age = DateTime.Now - accCreationDate;
+            int accountAgeInDays = (int)age.TotalDays;
 
-            if (recentlyPlayedGames != "No Recently Played Games")
+            if (accountAgeInDays <= MaxAccountAgeInDays)
             {
-                recentlyPlayedScore = 0;
-                int t = recentlyPlayedGames.Length;
-                int a = 0;
-                if (t >= 2)
-                    recentlyPlayedScore += 5;
-                foreach (var i in recentlyPlayedGames)
-                    a += i.playtime_2weeks;
-                if (a > 120)
-                    recentlyPlayedScore += 5;
+                return MaxScore;
             }
 
-            //if (inventoryCSGO.numOfInvItems != "Unknown" && inventoryCSGO.numOfExtItems != "Unknown")
-            //{
-            //    inventoryScore = 0;
-            //    if (inventoryCSGO.numOfInvItems > 50)
-            //        inventoryScore += 2.5;
-            //    if (inventoryCSGO.numOfExtItems > 5)
-            //        inventoryScore += 2.5;
-            //}
-
-            if (playerGroups != "Unknown")
-            {
-                groups
-            }
+            double ratio = (double)MaxAccountAgeInDays / accountAgeInDays;
+            return (int)(MaxScore * ratio);
         }
     }
 }

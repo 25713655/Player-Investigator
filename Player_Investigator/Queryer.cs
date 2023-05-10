@@ -49,14 +49,22 @@ namespace Player_Investigator
 
     internal class GetPlayerAchievementsInfo
     {
-        public string? game;
-        public int? count;
         public List<AchievementInfo>? achievements { get; set; }
+
+        public GetPlayerAchievementsInfo()
+        {
+
+        }
     }
 
     internal class AchievementInfo
     {
-        public int? achieved;
+        public int? achieved { get; set; }
+    }
+
+    internal class GetSteamLevelInfo
+    {
+        public int? player_level { get; set; }
     }
 
     internal class Queryer
@@ -79,10 +87,11 @@ namespace Player_Investigator
         //Change to static?
         private HttpClient httpClient;
         public string key, steamID, output;
-        public string? requestString, getPlayerSummaryResponse, getOwnedGamesResponse, getOwnedPaidGamesResponse, getPlayerAchievementsResponseCSGO, getPlayerAchievementsResponseDota2, getPlayerAchievementsResponseApex;
+        public string? requestString, getPlayerSummaryResponse, getOwnedGamesResponse, getOwnedPaidGamesResponse, getPlayerAchievementsResponseCSGO, getPlayerAchievementsResponseDota2, getPlayerAchievementsResponseApex, getSteamLevelResponse;
         public GetPlayerSummaryInfo? getPlayerSummaryInfo;
         public GetOwnedGamesInfo? getOwnedGamesInfo, getOwnedPaidGamesInfo;
         public GetPlayerAchievementsInfo? getPlayerAchievementInfoCSGO, getPlayerAchievementInfoDota2, getPlayerAchievementInfoApex;
+        public GetSteamLevelInfo? getSteamLevelInfo;
 
         //Form functions
 
@@ -90,12 +99,6 @@ namespace Player_Investigator
         {
             this.key = key;
             this.steamID = steamID;
-            this.key = "4DA0CD7EC93E4167D233CCF091DD4B8F"; //Remove
-            //this.steamID = "76561197960435530"; //Remove
-            this.steamID = "76561197960434622";
-
-            this.steamID = "76561198271851487";
-            //this.steamID = "76561198271791346";
 
             output = "";
             httpClient = new()
@@ -121,11 +124,15 @@ namespace Player_Investigator
 
             //GetPlayerAchievements
             requestString = $"ISteamUserStats/GetPlayerAchievements/v0001/?appid=730&key={key}&steamid={steamID}";
-            getPlayerAchievementsResponseCSGO = await GetInfo(requestString, -1, 18);
+            getPlayerAchievementsResponseCSGO = await GetInfo(requestString, -1, 17);
             requestString = $"ISteamUserStats/GetPlayerAchievements/v0001/?appid=570&key={key}&steamid={steamID}";
-            getPlayerAchievementsResponseDota2 = await GetInfo(requestString, -1, 18);
+            getPlayerAchievementsResponseDota2 = await GetInfo(requestString, -1, 17);
             requestString = $"ISteamUserStats/GetPlayerAchievements/v0001/?appid=1172470&key={key}&steamid={steamID}";
-            getPlayerAchievementsResponseApex = await GetInfo(requestString, -1, 18);
+            getPlayerAchievementsResponseApex = await GetInfo(requestString, -1, 17);
+
+            //GetSteamLevel
+            requestString = $"IPlayerService/GetSteamLevel/v1/?key={key}&steamid={steamID}";
+            getSteamLevelResponse = await GetInfo(requestString, 12, 1);
 
             //Create objects with info retrieved
             try
@@ -133,9 +140,31 @@ namespace Player_Investigator
                 getPlayerSummaryInfo = JsonSerializer.Deserialize<GetPlayerSummaryInfo>(getPlayerSummaryResponse);
                 getOwnedGamesInfo = JsonSerializer.Deserialize<GetOwnedGamesInfo>(getOwnedGamesResponse);
                 getOwnedPaidGamesInfo = JsonSerializer.Deserialize<GetOwnedGamesInfo>(getOwnedPaidGamesResponse);
-                getPlayerAchievementInfoCSGO = JsonSerializer.Deserialize<GetPlayerAchievementsInfo>(getPlayerAchievementsResponseCSGO);
-                getPlayerAchievementInfoDota2 = JsonSerializer.Deserialize<GetPlayerAchievementsInfo>(getPlayerAchievementsResponseDota2);
-                getPlayerAchievementInfoApex = JsonSerializer.Deserialize<GetPlayerAchievementsInfo>(getPlayerAchievementsResponseApex);
+                if (getPlayerAchievementsResponseCSGO == "")
+                {
+                    getPlayerAchievementInfoCSGO = new GetPlayerAchievementsInfo();
+                }
+                else
+                {
+                    getPlayerAchievementInfoCSGO = JsonSerializer.Deserialize<GetPlayerAchievementsInfo>(getPlayerAchievementsResponseCSGO);
+                }
+                if (getPlayerAchievementsResponseDota2 == "")
+                {
+                    getPlayerAchievementInfoDota2 = new GetPlayerAchievementsInfo();
+                }
+                else
+                {
+                    getPlayerAchievementInfoDota2 = JsonSerializer.Deserialize<GetPlayerAchievementsInfo>(getPlayerAchievementsResponseDota2);
+                }
+                if (getPlayerAchievementsResponseApex == "")
+                {
+                    getPlayerAchievementInfoApex = new GetPlayerAchievementsInfo();
+                }
+                else
+                {
+                    getPlayerAchievementInfoApex = JsonSerializer.Deserialize<GetPlayerAchievementsInfo>(getPlayerAchievementsResponseApex);
+                }
+                getSteamLevelInfo = JsonSerializer.Deserialize<GetSteamLevelInfo>(getSteamLevelResponse);
             }
             catch (Exception)
             {
@@ -145,28 +174,37 @@ namespace Player_Investigator
 
             //Create a UserInfo object with all the info retrieved
             int CSGOAchievements = 0, Dota2Achievements = 0, ApexAchievements = 0;
-            foreach (var achievement in getPlayerAchievementInfoCSGO.achievements)
+            if (getPlayerAchievementInfoCSGO.achievements is not null)
             {
-                if (achievement.achieved == 1)
+                foreach (var achievement in getPlayerAchievementInfoCSGO.achievements)
                 {
-                    CSGOAchievements++;
+                    if (achievement.achieved == 1)
+                    {
+                        CSGOAchievements++;
+                    }
                 }
             }
-            foreach (var achievement in getPlayerAchievementInfoDota2.achievements)
+            if (getPlayerAchievementInfoDota2.achievements is not null)
             {
-                if (achievement.achieved == 1)
+                foreach (var achievement in getPlayerAchievementInfoDota2.achievements)
                 {
-                    Dota2Achievements++;
+                    if (achievement.achieved == 1)
+                    {
+                        Dota2Achievements++;
+                    }
                 }
             }
-            foreach (var achievement in getPlayerAchievementInfoApex.achievements)
+            if (getPlayerAchievementInfoApex.achievements is not null)
             {
-                if (achievement.achieved == 1)
+                foreach (var achievement in getPlayerAchievementInfoApex.achievements)
                 {
-                    ApexAchievements++;
+                    if (achievement.achieved == 1)
+                    {
+                        ApexAchievements++;
+                    }
                 }
             }
-            UserInfo userInfo = new(getPlayerSummaryInfo, getOwnedGamesInfo, getOwnedPaidGamesInfo.game_count, CSGOAchievements, Dota2Achievements, ApexAchievements);
+            UserInfo userInfo = new(getPlayerSummaryInfo, getOwnedGamesInfo, getOwnedPaidGamesInfo.game_count, CSGOAchievements, Dota2Achievements, ApexAchievements, getSteamLevelInfo.player_level);
 
             if (userInfo.visible == 1)
             {
@@ -197,7 +235,7 @@ namespace Player_Investigator
             }
             catch (Exception)
             {
-                output += "Unable to retrieve information.\n";
+                //output += "Unable to retrieve information.\n";
                 return "";
             }
             //WriteRequestToOutput(response);
@@ -205,8 +243,14 @@ namespace Player_Investigator
             string responseString = await response.Content.ReadAsStringAsync();
             if (index1 == -1)
             {
-                index1 = responseString.IndexOf("[");
-                responseString = responseString[(index1 + 1)..(responseString.Length - index2)];
+                index1 = responseString.IndexOf("achievements") - 1;
+                if (index1 < 0)
+                {
+                    return "";
+                }
+                responseString = responseString[index1..(responseString.Length - index2)];
+                responseString = responseString.Insert(0, "{");
+                responseString = responseString.Insert(responseString.Length, "}");
             }
             else
             {

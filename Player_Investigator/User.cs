@@ -24,6 +24,8 @@ namespace Player_Investigator
         public int profileState { get; set; }
         //Date and time the account was created
         public DateTime timeCreated { get; set; }
+        //Level
+        public int level { get; set; }
         //Primary group ID
         public string primaryGroupID { get; set; }
         //Country
@@ -41,23 +43,23 @@ namespace Player_Investigator
         public bool CSGOPlayed { get; set; }
         public int CSGOPlaytime2Weeks { get; set; }
         public int CSGOPlaytimeForever { get; set; }
-        public ulong CSGOLastPlayed { get; set; }
+        public DateTime CSGOLastPlayed { get; set; }
         public int CSGOAchievementCount { get; set; }
         //Dota 2 Info
         public bool Dota2Played { get; set; }
         public int Dota2Playtime2Weeks { get; set; }
         public int Dota2PlaytimeForever { get; set; }
-        public ulong Dota2LastPlayed { get; set; }
+        public DateTime Dota2LastPlayed { get; set; }
         public int Dota2AchievementCount { get; set; }
         //Apex Info
         public bool ApexPlayed { get; set; }
         public int ApexPlaytime2Weeks { get; set; }
         public int ApexPlaytimeForever { get; set; }
-        public ulong ApexLastPlayed { get; set; }
+        public DateTime ApexLastPlayed { get; set; }
         public int ApexAchievementCount { get; set; }
 
 
-        public UserInfo(GetPlayerSummaryInfo gPSI, GetOwnedGamesInfo gOGI, int? pGC, int CSGOAC, int DOTA2AC, int APEXAC)
+        public UserInfo(GetPlayerSummaryInfo gPSI, GetOwnedGamesInfo gOGI, int? pGC, int CSGOAC, int DOTA2AC, int APEXAC, int? lvl)
         {
             //GetPlayerSummaryInfo
             if (gPSI.steamid is null)
@@ -125,6 +127,15 @@ namespace Player_Investigator
                 //timeCreated = new((ulong)gPSI.timecreated);
             }
 
+            if (lvl is null)
+            {
+                level = -1;
+            }
+            else
+            {
+                level = (int)lvl;
+            }
+
             if (gPSI.primaryclanid is null)
             {
                 primaryGroupID = "";
@@ -189,24 +200,20 @@ namespace Player_Investigator
             }
 
             CSGOPlayed = false;
-            CSGOPlaytime2Weeks = -1;
-            CSGOPlaytimeForever = -1;
-            CSGOLastPlayed = 0;
+            CSGOPlaytime2Weeks = 0;
+            CSGOPlaytimeForever = 0;
             Dota2Played = false;
-            Dota2Playtime2Weeks = -1;
-            Dota2PlaytimeForever = -1;
-            Dota2LastPlayed = 0;
+            Dota2Playtime2Weeks = 0;
+            Dota2PlaytimeForever = 0;
             ApexPlayed = false;
-            ApexPlaytime2Weeks = -1;
-            ApexPlaytimeForever = -1;
-            ApexLastPlayed = 0;
+            ApexPlaytime2Weeks = 0;
+            ApexPlaytimeForever = 0;
             if (gOGI.games is not null)
             {
                 foreach (var game in gOGI.games)
                 {
                     if (game.appid == 730)
                     {
-                        CSGOPlayed = true;
                         if (game.playtime_2weeks is null)
                         {
                             CSGOPlaytime2Weeks = 0;
@@ -216,11 +223,11 @@ namespace Player_Investigator
                             CSGOPlaytime2Weeks = (int)game.playtime_2weeks;
                         }
                         CSGOPlaytimeForever = (int)game.playtime_forever;
-                        CSGOLastPlayed = (ulong)game.rtime_last_played;
+                        CSGOLastPlayed = new(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+                        CSGOLastPlayed = CSGOLastPlayed.AddSeconds((double)game.rtime_last_played);
                     }
                     else if (game.appid == 570)
                     {
-                        Dota2Played = true;
                         if (game.playtime_2weeks is null)
                         {
                             Dota2Playtime2Weeks = 0;
@@ -230,11 +237,11 @@ namespace Player_Investigator
                             Dota2Playtime2Weeks = (int)game.playtime_2weeks;
                         }
                         Dota2PlaytimeForever = (int)game.playtime_forever;
-                        Dota2LastPlayed = (ulong)game.rtime_last_played;
+                        Dota2LastPlayed = new(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+                        Dota2LastPlayed = Dota2LastPlayed.AddSeconds((double)game.rtime_last_played);
                     }
                     else if (game.appid == 1172470)
                     {
-                        ApexPlayed = true;
                         if (game.playtime_2weeks is null)
                         {
                             ApexPlaytime2Weeks = 0;
@@ -244,9 +251,22 @@ namespace Player_Investigator
                             ApexPlaytime2Weeks = (int)game.playtime_2weeks;
                         }
                         ApexPlaytimeForever = (int)game.playtime_forever;
-                        ApexLastPlayed = (ulong)game.rtime_last_played;
+                        ApexLastPlayed = new(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+                        ApexLastPlayed = ApexLastPlayed.AddSeconds((double)game.rtime_last_played);
                     }
                 }
+            }
+            if (CSGOPlaytimeForever > 0)
+            {
+                CSGOPlayed = true;
+            }
+            if (Dota2PlaytimeForever > 0)
+            {
+                Dota2Played = true;
+            }
+            if (ApexPlaytimeForever > 0)
+            {
+                ApexPlayed = true;
             }
 
             //GetPlayerAchievementInfo
