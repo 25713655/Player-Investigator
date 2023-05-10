@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Player_Investigator
 {
@@ -44,13 +45,22 @@ namespace Player_Investigator
         public int? playtime_2weeks { get; set; }
         public int? playtime_forever { get; set; }
         public ulong? rtime_last_played { get; set; }
+    }
 
+    internal class GetPlayerAchievementsInfo
+    {
+        public string? game;
+        public int? count;
+        public List<AchievementInfo>? achievements { get; set; }
+    }
+
+    internal class AchievementInfo
+    {
+        public int? achieved;
     }
 
     internal class Queryer
     {
-        //Error handling
-
         //https://developer.valvesoftware.com/wiki/Steam_Web_API
         //https://partner.steamgames.com/doc/webapi_overview
         //https://learn.microsoft.com/en-us/dotnet/fundamentals/networking/http/httpclient
@@ -69,9 +79,10 @@ namespace Player_Investigator
         //Change to static?
         private HttpClient httpClient;
         public string key, steamID, output;
-        public string? requestString, getPlayerSummaryResponse, getOwnedGamesResponse;
+        public string? requestString, getPlayerSummaryResponse, getOwnedGamesResponse, getOwnedPaidGamesResponse, getPlayerAchievementsResponseCSGO, getPlayerAchievementsResponseDota2, getPlayerAchievementsResponseApex;
         public GetPlayerSummaryInfo? getPlayerSummaryInfo;
-        public GetOwnedGamesInfo? getOwnedGamesInfo;
+        public GetOwnedGamesInfo? getOwnedGamesInfo, getOwnedPaidGamesInfo;
+        public GetPlayerAchievementsInfo? getPlayerAchievementInfoCSGO, getPlayerAchievementInfoDota2, getPlayerAchievementInfoApex;
 
         //Form functions
 
@@ -80,7 +91,7 @@ namespace Player_Investigator
             this.key = key;
             this.steamID = steamID;
             this.key = "4DA0CD7EC93E4167D233CCF091DD4B8F"; //Remove
-            this.steamID = "76561197960435530"; //Remove
+            //this.steamID = "76561197960435530"; //Remove
             this.steamID = "76561197960434622";
 
             this.steamID = "76561198271851487";
@@ -98,8 +109,6 @@ namespace Player_Investigator
 
         public async Task<UserInfo> GetAll()
         {
-            output = "";
-
             //GetPlayerSummary
             requestString = $"ISteamUser/GetPlayerSummaries/v0002/?key={key}&steamids={steamID}";
             getPlayerSummaryResponse = await GetInfo(requestString, 24, 3);
@@ -107,15 +116,59 @@ namespace Player_Investigator
             //GetOwnedGames
             requestString = $"IPlayerService/GetOwnedGames/v0001/?key={key}&steamid={steamID}&include_played_free_games=1";
             getOwnedGamesResponse = await GetInfo(requestString, 12, 1);
+            requestString = $"IPlayerService/GetOwnedGames/v0001/?key={key}&steamid={steamID}&include_played_free_games=0";
+            getOwnedPaidGamesResponse = await GetInfo(requestString, 12, 1);
+
+            //GetPlayerAchievements
+            requestString = $"ISteamUserStats/GetPlayerAchievements/v0001/?appid=730&key={key}&steamid={steamID}";
+            getPlayerAchievementsResponseCSGO = await GetInfo(requestString, -1, 18);
+            requestString = $"ISteamUserStats/GetPlayerAchievements/v0001/?appid=570&key={key}&steamid={steamID}";
+            getPlayerAchievementsResponseDota2 = await GetInfo(requestString, -1, 18);
+            requestString = $"ISteamUserStats/GetPlayerAchievements/v0001/?appid=1172470&key={key}&steamid={steamID}";
+            getPlayerAchievementsResponseApex = await GetInfo(requestString, -1, 18);
 
             //Create objects with info retrieved
-            getPlayerSummaryInfo = JsonSerializer.Deserialize<GetPlayerSummaryInfo>(getPlayerSummaryResponse);
-            getOwnedGamesInfo = JsonSerializer.Deserialize<GetOwnedGamesInfo>(getOwnedGamesResponse);
+            try
+            {
+                getPlayerSummaryInfo = JsonSerializer.Deserialize<GetPlayerSummaryInfo>(getPlayerSummaryResponse);
+                getOwnedGamesInfo = JsonSerializer.Deserialize<GetOwnedGamesInfo>(getOwnedGamesResponse);
+                getOwnedPaidGamesInfo = JsonSerializer.Deserialize<GetOwnedGamesInfo>(getOwnedPaidGamesResponse);
+                getPlayerAchievementInfoCSGO = JsonSerializer.Deserialize<GetPlayerAchievementsInfo>(getPlayerAchievementsResponseCSGO);
+                getPlayerAchievementInfoDota2 = JsonSerializer.Deserialize<GetPlayerAchievementsInfo>(getPlayerAchievementsResponseDota2);
+                getPlayerAchievementInfoApex = JsonSerializer.Deserialize<GetPlayerAchievementsInfo>(getPlayerAchievementsResponseApex);
+            }
+            catch (Exception)
+            {
+                return null;
+                throw;
+            }
 
             //Create a UserInfo object with all the info retrieved
-            UserInfo userInfo = new(getPlayerSummaryInfo, getOwnedGamesInfo);
+            int CSGOAchievements = 0, Dota2Achievements = 0, ApexAchievements = 0;
+            foreach (var achievement in getPlayerAchievementInfoCSGO.achievements)
+            {
+                if (achievement.achieved == 1)
+                {
+                    CSGOAchievements++;
+                }
+            }
+            foreach (var achievement in getPlayerAchievementInfoDota2.achievements)
+            {
+                if (achievement.achieved == 1)
+                {
+                    Dota2Achievements++;
+                }
+            }
+            foreach (var achievement in getPlayerAchievementInfoApex.achievements)
+            {
+                if (achievement.achieved == 1)
+                {
+                    ApexAchievements++;
+                }
+            }
+            UserInfo userInfo = new(getPlayerSummaryInfo, getOwnedGamesInfo, getOwnedPaidGamesInfo.game_count, CSGOAchievements, Dota2Achievements, ApexAchievements);
 
-            if (getPlayerSummaryInfo.communityvisibilitystate == 1)
+            if (userInfo.visible == 1)
             {
                 output += "Profile is private. Cannot retrieve information.\n";
             }
@@ -138,11 +191,27 @@ namespace Player_Investigator
             using HttpResponseMessage response = await httpClient.GetAsync(request);
 
             //try except here
-            response.EnsureSuccessStatusCode();
+            try
+            {
+                response.EnsureSuccessStatusCode();
+            }
+            catch (Exception)
+            {
+                output += "Unable to retrieve information.\n";
+                return "";
+            }
             //WriteRequestToOutput(response);
 
             string responseString = await response.Content.ReadAsStringAsync();
-            responseString = responseString[index1..(responseString.Length - index2)];
+            if (index1 == -1)
+            {
+                index1 = responseString.IndexOf("[");
+                responseString = responseString[(index1 + 1)..(responseString.Length - index2)];
+            }
+            else
+            {
+                responseString = responseString[index1..(responseString.Length - index2)];
+            }
             //Use replace instead?
             //Replace(start, "")
             //jsonResponse = jsonResponse.Replace("]}}", "");

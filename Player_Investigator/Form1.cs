@@ -31,6 +31,11 @@ namespace Player_Investigator
             UserInfo? userInfo = await queryer.GetAll();
 
             richTextBox1.Text = queryer.output;
+
+            if (userInfo is null || userInfo.visible == 1)
+            {
+                return;
+            }
         }
 
         private void button2_Click(object sender, EventArgs e)

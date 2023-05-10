@@ -36,24 +36,28 @@ namespace Player_Investigator
 
         //How many games are in the user's library
         public int gameCount { get; set; }
+        public int paidGameCount { get; set; }
         //CS:GO Info
         public bool CSGOPlayed { get; set; }
         public int CSGOPlaytime2Weeks { get; set; }
         public int CSGOPlaytimeForever { get; set; }
         public ulong CSGOLastPlayed { get; set; }
+        public int CSGOAchievementCount { get; set; }
         //Dota 2 Info
         public bool Dota2Played { get; set; }
         public int Dota2Playtime2Weeks { get; set; }
         public int Dota2PlaytimeForever { get; set; }
         public ulong Dota2LastPlayed { get; set; }
+        public int Dota2AchievementCount { get; set; }
         //Apex Info
         public bool ApexPlayed { get; set; }
         public int ApexPlaytime2Weeks { get; set; }
         public int ApexPlaytimeForever { get; set; }
         public ulong ApexLastPlayed { get; set; }
+        public int ApexAchievementCount { get; set; }
 
 
-        public UserInfo(GetPlayerSummaryInfo gPSI, GetOwnedGamesInfo gOGI) //And others
+        public UserInfo(GetPlayerSummaryInfo gPSI, GetOwnedGamesInfo gOGI, int? pGC, int CSGOAC, int DOTA2AC, int APEXAC)
         {
             //GetPlayerSummaryInfo
             if (gPSI.steamid is null)
@@ -175,6 +179,15 @@ namespace Player_Investigator
             {
                 gameCount = (int)gOGI.game_count;
             }
+            if (pGC is null)
+            {
+                paidGameCount = -1;
+            }
+            else
+            {
+                paidGameCount = (int)pGC;
+            }
+
             CSGOPlayed = false;
             CSGOPlaytime2Weeks = -1;
             CSGOPlaytimeForever = -1;
@@ -235,6 +248,11 @@ namespace Player_Investigator
                     }
                 }
             }
+
+            //GetPlayerAchievementInfo
+            CSGOAchievementCount = CSGOAC;
+            Dota2AchievementCount = DOTA2AC;
+            ApexAchievementCount = APEXAC;
         }
 
         public override string ToString()
