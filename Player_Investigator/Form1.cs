@@ -10,20 +10,17 @@ namespace Player_Investigator
 
         Calculator? calculator;
 
-        string key = "4DA0CD7EC93E4167D233CCF091DD4B8F"; //Remove
-        string steamID = "76561197960434622"; //"Valve employee"
-        //string steamID = "76561199502029751";
+        string key, steamID, game;
 
-        //string steamID = "76561198271851487"; //"nomsies"
-        //string steamID = "76561198271791346"; //"kezosi"
-
-        //string steamID = "76561198963674526"; //"asdfg"
-        //string steamID = "76561198259415370"; //"aaaaa"
         //Form functions
 
         public Form1()
         {
             InitializeComponent();
+
+            key = "";
+            steamID = "";
+            game = "";
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -33,27 +30,78 @@ namespace Player_Investigator
 
         private async void button1_Click(object sender, EventArgs e)
         {
+            errorTextBox.Text = "";
+            ratingBar.Value = 0;
+            percentageTextBox.Text = "";
+            usernameTextBox.Text = "";
+            playtimeTextBox.Text = "";
+            createdTextBox.Text = "";
+
+            key = keyTextBox.Text;
+            steamID = IDTextBox.Text;
+            game = gameSelection.Text;
+            if (game != "CS:GO" && game != "Dota 2" && game != "Apex Legends")
+            {
+                errorTextBox.Text = "Invalid game selection.";
+                return;
+            }
+
             queryer = new Queryer(key, steamID);
 
             UserInfo? userInfo = await queryer.GetAll();
 
-            richTextBox1.Text = queryer.output;
-
-            if (userInfo is null || userInfo.visible == 1)
+            if (userInfo is null)
             {
+                errorTextBox.Text = "Unable to retrieve information.";
                 return;
             }
+            else if (userInfo.visible == 1)
+            {
+                errorTextBox.Text = "Profile is private.";
+            }
+            else
+            {
+                calculator = new Calculator(userInfo);
 
-            calculator = new Calculator(userInfo);
+                double percentage = calculator.CheckSmurfAccount(game);
+                percentageTextBox.Text = $"Calculated percentage: {percentage}%";
+                ratingBar.Value = (int)percentage;
 
-            /*double percentage = */calculator.CheckSmurfAccount("CS:GO");
+                usernameTextBox.Text = $"Username: {userInfo.username}";
 
-            richTextBox1.Text += calculator.output;
-        }
+                if (game == "CS:GO")
+                {
+                    if (userInfo.CSGOPlaytimeForever == 0)
+                    {
+                        errorTextBox.Text = "User has never played CS:GO.";
+                        percentageTextBox.Text = $"Calculated percentage: 0%";
+                        ratingBar.Value = 0;
+                    }
+                    playtimeTextBox.Text = $"Playtime: {userInfo.CSGOPlaytimeForever / 60} hours";
+                }
+                else if (game == "Dota 2")
+                {
+                    if (userInfo.Dota2PlaytimeForever == 0)
+                    {
+                        errorTextBox.Text = "User has never played Dota 2.";
+                        percentageTextBox.Text = $"Calculated percentage: 0%";
+                        ratingBar.Value = 0;
+                    }
+                    playtimeTextBox.Text = $"Playtime: {userInfo.Dota2PlaytimeForever / 60} hours";
+                }
+                else if (game == "Apex Legends")
+                {
+                    if (userInfo.ApexPlaytimeForever == 0)
+                    {
+                        errorTextBox.Text = "User has never played Apex Legends.";
+                        percentageTextBox.Text = $"Calculated percentage: 0%";
+                        ratingBar.Value = 0;
+                    }
+                    playtimeTextBox.Text = $"Playtime: {userInfo.ApexPlaytimeForever / 60} hours";
+                }
 
-        private void button2_Click(object sender, EventArgs e)
-        {
-            Close();
+                createdTextBox.Text = $"Date created: {userInfo.timeCreated}";
+            }
         }
     }
 }

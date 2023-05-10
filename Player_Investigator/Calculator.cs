@@ -23,8 +23,8 @@ namespace Player_Investigator
         private const int NumFriendsWeight = 20;
         private const int SteamLevelWeight = 10;
         private const int AccountAgeWeight = 35;
-        private const int AchievementCountWeight = 10;
-        private const int PaidGameCountWeight = 30;
+        private const int AchievementCountWeight = 5;
+        private const int PaidGameCountWeight = 35;
 
         private const int MaxTimePlayed = 100;
         private const int MinNumFriends = 10;
