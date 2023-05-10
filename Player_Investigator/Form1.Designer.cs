@@ -90,7 +90,7 @@
             this.ratingBar.MarqueeAnimationSpeed = 0;
             this.ratingBar.Name = "ratingBar";
             this.ratingBar.Size = new System.Drawing.Size(500, 25);
-            this.ratingBar.Style = System.Windows.Forms.ProgressBarStyle.Marquee;
+            this.ratingBar.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
             this.ratingBar.TabIndex = 6;
             // 
             // errorTextBox
