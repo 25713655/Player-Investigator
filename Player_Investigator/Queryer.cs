@@ -29,12 +29,6 @@ namespace Player_Investigator
 
     internal class GetOwnedGamesInfo
     {
-        //Figure out which games to do
-        //Apex, CSGO, Dota2
-        //CS:GO - 730
-        //Dota 2 - 570
-        //Apex - 1172470
-
         public int? game_count { get; set; }
         public List<GamesInfo>? games { get; set; }
     }
@@ -71,20 +65,12 @@ namespace Player_Investigator
     {
         //https://developer.valvesoftware.com/wiki/Steam_Web_API
         //https://partner.steamgames.com/doc/webapi_overview
-        //https://learn.microsoft.com/en-us/dotnet/fundamentals/networking/http/httpclient
-        //https://learn.microsoft.com/en-us/dotnet/csharp/asynchronous-programming/async-return-types
-        //https://api.steampowered.com/<interface>/<method>/v<version>/
-
-        //https://learn.microsoft.com/en-us/samples/dotnet/samples/windowsforms-formatting-utility-cs/
-        //https://stackoverflow.com/questions/61497025/c-sharp-iterate-over-a-json-object
-        //https://www.epochconverter.com/
 
         //GetPlayerSummaries
-        //GetFriendList?
-        //GetPlayerAchievements/GetUserStatsForGame?
+        //GetFriendList
+        //GetPlayerAchievements/GetUserStatsForGame
         //GetOwnedGames/GetRecentlyPlayedGames
 
-        //Change to static?
         private HttpClient httpClient;
         public string key, steamID, output;
         public string? requestString, getPlayerSummaryResponse, getOwnedGamesResponse, getOwnedPaidGamesResponse, getPlayerAchievementsResponseCSGO, getPlayerAchievementsResponseDota2, getPlayerAchievementsResponseApex, getSteamLevelResponse;
@@ -104,7 +90,6 @@ namespace Player_Investigator
             httpClient = new()
             {
                 BaseAddress = new Uri("https://api.steampowered.com"),
-                //BaseAddress = new Uri("https://jsonplaceholder.typicode.com"),
             };
         }
 
@@ -213,22 +198,12 @@ namespace Player_Investigator
             output += userInfo.ToString();
 
             return userInfo;
-
-            //output += userInfo.ToString();
-            //var properties = getPlayerSummaryInfo.GetType().GetProperties();
-            //foreach (var property in properties)
-            //{
-            //    var name = property.Name;
-            //    var value = property.GetValue(getPlayerSummaryInfo);
-            //    output += $"{name}: {value}\n";
-            //}
         }
 
         public async Task<string> GetInfo(string request, int index1, int index2)
         {
             using HttpResponseMessage response = await httpClient.GetAsync(request);
 
-            //try except here
             try
             {
                 response.EnsureSuccessStatusCode();
